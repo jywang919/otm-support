@@ -1,0 +1,204 @@
+Tutorial:  https://aws.amazon.com/getting-started/tutorials/deploy-docker-containers/
+https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_GetStarted_EC2.html
+0	https://us-east-2.console.aws.amazon.com/ecs/home?region=us-east-2#/firstRun
+
+Cluster -> Service -> Task definition ->  Container (Docker) definition
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+|||||||| dockerize: into VirtualBox's Docker |||||||| 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+1.	in Eclipse, build the war via gradle -> build clean then war
+2	under git Bash
+	cd /C/z99jw/2take/git/repository/jeff_git/gaeGradle2WangMobile_DeployTomcat600	
+	docker image build -t wangmobile .
+
+--------ECR images from Docker image
+3.0 Set-up ECR:  jw https://us-east-2.console.aws.amazon.com/ecr/repositories?region=us-east-2
+3.1 https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-ecr-image.html
+	1.1)	To authenticate Docker to an Amazon ECR registry with get-login  https://docs.aws.amazon.com/AmazonECR/latest/userguide/Registries.html#registry_auth
+		1.1.0 install AWS cli -- https://docs.aws.amazon.com/cli/latest/userguide/install-windows.html#install-msi-on-windows
+			JW installed at C:\Program Files\Amazon\AWSCLI\
+			1.1.0.1 configure the CLI
+				 - https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html
+				get key: 
+				1) goto https://console.aws.amazon.com/iam/home?#/home
+				2) Users -> Choose your IAM user name (not the check box) (Administrator) -> Security credentials tab -> 				
+		1.1.1	Run the aws ecr get-login command
+			aws ecr get-login --region us-east-2 --no-include-email
+			==> output a long string for login from docker
+		1.1.2 run the docker login long command from 1.1.1
+			==> Login Succeeded
+		
+3.2	docker tag wangmobile 220643443665.dkr.ecr.us-east-2.amazonaws.com/jwrepo2
+3.3 docker push 220643443665.dkr.ecr.us-east-2.amazonaws.com/jwrepo2
+
+
+=====================================================================================================================
+Security Group
+=====================================================================================================================
+IAM User:  https://docs.aws.amazon.com/AmazonECR/latest/userguide/get-set-up-for-amazon-ecr.html
+===========================================================================================================================================	
+-------------------Lunch(Create) an Instance
+https://console.aws.amazon.com/ec2/
+From the console dashboard, choose Launch Instance. -> Amazon Linux 64-bit(x86) / 64-bit(Arm) t2 micro (Free tier eligible) -> Lunch -> Choose an existing key pair|Create key pais jw_aws_key_pair2019.perm
+
+-------------------Connect to Instance
+Connecting to Your Linux Instance Using SSH (make sure ssh client is installed)  
+AWS -> EC2 ->Instances -> <the instance> -> Public DNS: ec2-18-188-183-115.us-east-2.compute.amazonaws.com
+
+https://us-east-2.console.aws.amazon.com/ec2/v2/home?region=us-east-2#Home: -> Instances -> select the instance
+Click the Connect button to get ssh connect information
+ssh -i "jw_aws_key_pair2019.pem" ec2-user@ec2-18-188-183-115.us-east-2.compute.amazonaws.com
+
+Make sure the instance's SG's inbound allows following   for ssh 
+SSH	TCP	22	0.0.0.0/0
+	
+
+6	Delete task/service
+	Simple delete the cluster:  https://us-east-2.console.aws.amazon.com/ecs/home?region=us-east-2#/clusters -> click the cluster -> Delete Cluster 
+	Associated Security group, Network Interface, VPCs are all deleted when deleting the cluster
+	
+	if can not delete the cluster, delete the VPC first from 
+	https://us-east-2.console.aws.amazon.com/vpc/home?region=us-east-2#vpcs:sort=VpcId
+	
+	
+Since EC2 type is charged by Useage, Fargate by task size
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!	Currently Version Works - using EC2 -- charged by Useage !!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+see C:\z99jw\2take\Cloud\0_AWS_ecs\ECS\2019EC2 for screen shots
+
+https://us-east-2.console.aws.amazon.com/ecs/home?region=us-east-2#/clusters
+
+1	Create Cluster : EC2 Linux + Networking -> Next
+	t2-small
+	Create a new VPC -> 
+		CIDR block  	10.0.0.0/16
+		Subnet 1	10.0.0.0/24
+		Subnet 2 	10.0.1.0/24
+	Key pair: jw_aws_key_pair2019
+	
+	port range : 80
+	
+	SG: Create a new ...
+	SG inbound: (default)
+			CIDR block: 0.0.0.0/0
+			Port range: 80
+			
+	AWS -> EC2-> instances -> <the instance> -->	Pv4 Public IP:	18.223.108.57
+	
+2 	Create Task: Name: ec2-300 
+	EC2
+	Task Role: ecrTaskAdmin || ecsTaskExecutionRole
+	Task IAM role: ecsTaskExecutionRole
+	Network Mode: default 
+	
+	Memory 	1024 MiB + CPU: 0.5vCPU  ||512 MiB + CPU: 0.25vCPU	
+	Container: 
+		name: wang
+		image:	220643443665.dkr.ecr.us-east-2.amazonaws.com/aoc-jcs:latest
+		
+	Memory Limits: hard  300 (300-500 for web apps)
+	Port mappings: 80	8080 tcp
+	
+	Storage AND Logs: Auto-configure CloudWatch Logs
+	 
+3	Create Service
+	
+	Click the cluster -> Service -> Create
+	
+	Lunch type EC2
+	Task ec2-300
+	Cluster: ec2-c1  (t2-small EC2 cluster)
+	Service name:	ec2-s10
+	# tasks: 1
+	
+			
+4	Modified SG 
+	task -> instance -> security group -> inbound
+		Type	Protocol	Port Range	Source
+		HTTP	TCP		80		0.0.0.0/0
+
+5	Test the App
+	Get IP of app: Cluster -> Service -> Task -> Instance -> 
+		IPv4 Public IP: <18.188.183.115>
+	Get name to SSH: 
+		Public DNS (IPv4)	ec2-18-188-183-115.us-east-2.compute.amazonaws.com	
+	
+	http://18.188.183.115/wangmobile/support ==> Bingo
+
+6	Access logs
+	6.0 modify the instance SG inbound: Custom TCP TCP 22 Custom 0.0.0.0/0 
+	6.1 ssh to the instance:  
+			 cd /C/z99jw/2take/Cloud/0_AWS_ecs  -- where key file located in : "jw_aws_key_pair.pem2019"
+			ssh -i "jw_aws_key_pair.pem2019" ec2-user@ec2-18-223-108-57.us-east-2.compute.amazonaws.com
+	
+	6.2 docker container ls ==>  a9c385a67f93        220643443665.dkr.ecr.us-east-2.amazonaws.com/jwrepo2:latest 
+	6.3 docker logs a9c385a67f93  <-- from 6.2 above
+	every time refresh the app http://18.188.183.115/wangmobile/support, there will be a new entry "SupportController - support"
+
+6a  So far I haven't made Amazon CloudWatch Logs work for EC2 yet
+
+7	Examine the container via bash
+7.0 ssh into instance as  per 6.1 above 
+	
+	7.1	docker ps 
+		==> Names
+			trusting_fermat
+	7.2.	docker exec -it <the name from 1> bash	
+		==> bash-4.4# 
+		and you can examine the files in tomcat  	
+
+Err/Fix:http://18.188.183.115/wangmobile/support show the page
+	, then "18.188.183.115 refused to connect."
+Fix: create new task with container Memory Limits: hard  200 -> 300 
+
+*** lesson learned:   
+	0 	SG - the instance's sg determines the accessibility
+		Task's port mapping determing the port to the app. 
+	1	t2-micro -> t2-small
+	2	Memory Limits: hard  200 -> 300 when add container to task
+	
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!Currently Version Works - using Fargate -- charged by Size of task !
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+see C:\z99jw\2take\Cloud\0_AWS_ecs\ECS\2019Fargate for screen shots
+
+1	Created a Network-Only Cluster of FarGate type with default info in Ohio region (or any region)
+
+2	Create an  wangmobile-task
+	Fargate 
+	awsvpc
+	ecsTaskExecutionRole
+	1GM Memory +	0.5vCPU CPU || 0.5GB + 0.25vCPU 
+	container: 220643443665.dkr.ecr.us-east-2.amazonaws.com/jwrepo2:latest, 200MB, port mapping 8080
+	Memory Limit(MiB) Soft limit 300
+	
+3	Click the Cluster --> Service -> Create
+		Lunch type: Fargate
+		name wangmobile-service
+	 	task wangmobile-task
+	 	Cluster: NetworkOnlyCluster
+		# tasks: 1
+	
+		Subnets: pick first 2 available 
+	
+		Security Group: Create new,  wangmo-20190430 to modify later 
+			Modified Security Group inbound
+			Custom TCP Rule	TCP	8080	custom source 0.0.0.0/0
+
+4	View your Service /App
+	https://us-east-2.console.aws.amazon.com/ecs/home?region=us-east-2#/clusters
+	-> Clusters -> <the cluster> -> Service <the service> -> Tasks <the task>
+	-> Network -> ENI Id (eni-0e5037203b9df6cda)
+	-> Enter the IPv4 Public IP address <18.221.173.102> in your web browse
+	
+5	Test App:	http://18.221.173.102:8080/wangmobile/ -- Bingo
+
+
+6. View logs  https://docs.aws.amazon.com/AmazonECS/latest/developerguide/using_awslogs.html
+		If you are using the Fargate launch type for your tasks, all you need to do to enable the awslogs log driver is add the required logConfiguration parameters to your task definition. 
+		This configures your Fargate tasks to send log information to Amazon CloudWatch Logs. For more information, see Specifying a Log Configuration in your Task Definition.
+	Cluster -> Service -> Task <task id> -> Logs
+	
+		2019-05-02 15:59:51.222 INFO 1 --- [ost-startStop-1] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped "{[/support],methods=[GET]}" onto public java.lang.String com.ori.rest.SupportController.welcome(java.util.Map<java.lang.String, java.lang.Object>)

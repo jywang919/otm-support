@@ -1,0 +1,65 @@
+!!!!!!!!!!!!!! using JSP 1-2-3
+	====== build.gradle
+		compile("javax.servlet:jstl")	//JSTL for JSP
+   		providedRuntime('org.apache.tomcat.embed:tomcat-embed-jasper') //two places require this one -- I see this class in debug
+   
+	======application.properties
+		# for jsp pages
+		spring.mvc.view.prefix: /WEB-INF/jsp/
+		spring.mvc.view.suffix: .jsp
+		welcome.message: Hello Jeff Wang
+	====class   //InternalResourceViewResolver not needed since application.properties have them
+		@Configuration
+		@EnableWebMvc
+		@ComponentScan
+		public class MvcConfiguration extends WebMvcConfigurerAdapter
+		{
+		    @Override  
+		    public void configureViewResolvers(ViewResolverRegistry registry) {
+		        InternalResourceViewResolver resolver = new InternalResourceViewResolver();
+		        resolver.setPrefix("/WEB-INF/jsp/");
+		        resolver.setSuffix(".jsp");
+		        resolver.setViewClass(JstlView.class);
+		        registry.viewResolver(resolver);
+		        
+    ====controller
+	     public class WelcomeController {
+	    	@RequestMapping("/")	
+			public String welcome(Map<String, Object> model) {
+				Application.counter ++;
+				return "welcome";
+!!!!!!!!!!!!!!image not shown in jsp page
+	
+4	http://www.baeldung.com/spring-mvc-static-resources !!!!!!!!! Bingo
+3.1 	Serving a Resource Stored in the WAR 
+	actual file will be located in the WAR’s webapp/resources folder,
+	========public class MvcConfiguration extends WebMvcConfigurerAdapter
+		    @Override
+		    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+		        registry
+		          .addResourceHandler("/resources/**")
+		          .addResourceLocations("/resources/"); 
+	
+	======welcome.jsp
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<head>
+    <link href="<c:url value="/resources/main.css" />" rel="stylesheet">
+  <img src="<c:url value='/resources/imgs/map_btns.jpg'/>"/>
+  
+  =================================================
+  
+  tried and not work:
+  /imgs/...
+  ./imgs/*
+  1	======welcome.jsp
+  	<img src="${pageContext.request.contextPath}/imgs/map_btns.jpg"/>
+  	!! war files has /css /imgs folder
+  	
+  	WEB-INF/classes also has /css /imgs, /static, but blank
+  2	put in webapps/resources/imgs
+  	======welcome.jsp
+  	<img src="${pageContext.request.contextPath}/resources/imgs/map_btns.jpg"/>
+  	
+  3	put 	/css /imgs under main/resources/static folder
+  	======welcome.jsp
+	<img src="${pageContext.request.contextPath}/imgs/map_btns.jpg"/>

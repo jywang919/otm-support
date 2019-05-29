@@ -1,0 +1,52 @@
+0 following GAE tutorial https://codelabs.developers.google.com/codelabs/cloud-app-engine-springboot/index.html?index=..%2F..%2Findex#0
+1 download from https://github.com/spring-guides/gs-spring-boot.git
+2	copy gs-spring-master/complete
+3	gradlew eclipse
+4	eclipse open existing project
+5	modify build.gradle
+	5.1 add to buildscript  classpath 'com.google.cloud.tools:appengine-gradle-plugin:+'
+5.5	modify HelloController
+	return "Greetings from Spring Boot - gaeGradle0!";	
+5.1 test in bootRun ==> http://localhost:8080
+	==> Greetings from Spring Boot - gaeGradle0!6.
+7	re-open eclipse to see gae tasks
+7.1	project -> add Gradle nature
+7.2	project -> Gradle ->	Refresh Gradle Project
+8	re-open eclipse -> project shown under Gradle Tasks 
+
+	compile group: 'org.springframework.boot', name: 'spring-boot-starter-web'   
+    providedRuntime("org.springframework.boot:spring-boot-starter-tomcat")
+add ServletInitializer class
+
+Test:
+	http://localhost:8080/gaeGradle/hello
+	==>Greetings from Spring Boot - gaeGradle2_DeployTomcat HelloController!
+	
+********** deploy to cf
+***** client part 
+-3 	modify client environment to have ,postBaseUrl: point to 'https://oriinst.cfapps.io/'
+-2	ng build 	-- at command window C:\ws\ecNeon\ori\13ori-diag0-ui5??
+-1	copy Angular dist folder to C:\ws\ecOxy32\gaeGradle2_DeployTomcat\src\main\webapps folder
+****** Java REST part
+1.	Gradle task clean -> war (make sure java 32-bit e.g. C:\Java\jdk180u121i586)
+1a	Command line gradlew clean then gradlew build 
+2	Lunch Oracle V Box with docker on
+3.	Command Window: cf login 845gmail Z1@X  for oriinst | 845jywang@yahoo.com Z1@X for wangmobile
+4	C:\ws\ecOxy32\gaeGradle2_DeployTomcat>cf push wangmobile -p build\libs\wang-mobile-0.1.3.war
+	cf push wangmobile -p build\libs\wang-mobile-0.6.1.war --no-start
+	
+***** bound redis service to 	
+1	List Service Instances
+	cf services
+1.1	List details of a service
+	cf service jw-redis30	
+2	Bind a Service Instance to a Route
+	cf bind-route-service cfapps.io --hostname my-app my-service-instance
+	
+	cf bind-service wangmobile jw-redis30
+		Binding service jw-redis30 to app wangmobile in org ZhouInc / space development as jywang845@yahoo.com...
+			App wangmobile is already bound to jw-redis30.
+	
+	
+		
+	

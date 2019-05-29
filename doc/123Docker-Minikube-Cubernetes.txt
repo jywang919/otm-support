@@ -1,0 +1,221 @@
+0 Install DockerToolbox.exe with VirtualBox so docker VM is installed.  ip 192.168.99.100
+0.2	Install MiniKube -- for run Kubernetes cluster inside a VM on laptotop, so MiniKube and Kubernetes are called (minikube has it's own docker daemon)
+		My minikube has IP : 192.168.99.101:8443
+		
+1.	Dockerfile
+2.	under git Bash window  minikube start  --> will download and create the virtual machine in Oracle VirtualBox
+		$ minikube start
+3.	gradle build clean then war	
+
+4	under git bash:
+	 minikube delete (if there are old VMs)
+	 cd ~  !!!!!!! important, else may not create the minikube VM
+	 minikube start -- will start or create a  VM and report the IP address: 192.168.99.101
+		$ minikube start
+			o   minikube v1.0.0 on windows (amd64)
+			$   Downloading Kubernetes v1.14.0 images in the background ...
+			>   Creating virtualbox VM (CPUs=2, Memory=2048MB, Disk=20000MB) ...
+			-   "minikube" IP address is 192.168.99.101
+			o   Found network options:
+			    - NO_PROXY=192.168.99.100
+			-   Configuring Docker as the container runtime ...
+			    - env NO_PROXY=192.168.99.100
+			-   Version of container runtime is 18.06.2-ce
+			:   Waiting for image downloads to complete ...
+			-   Preparing Kubernetes environment ...
+			
+			-   Pulling images required by Kubernetes v1.14.0 ...
+			-   Launching Kubernetes v1.14.0 using kubeadm ...
+			:   Waiting for pods: apiserverdocker images
+			 proxy etcd scheduler controller dns
+			-   Configuring cluster permissions ...
+			-   Verifying component health .....
+			+   kubectl is now configured to use "minikube"
+			=   Done! Thank you for using minikube!
+		
+		to login to the minikube in Oracle VM: root
+		
+4.1	Check for docker available -- minikube has it's own docker but connect to VirtualBox's docker unless doing via 5a below
+	Also start VirtualBox's docker prerior to starting minikube
+	
+	docker images managed by VirtualBox's Docker
+	docker images
+	
+	docker images managed inside minikube
+	under git Bash (with minikube running)
+	eval $(minikube docker-env)
+	docker images
+	
+5 dockerize: into VirtualBox's Docker 
+	under git Bash
+	cd /C/z99jw/2take/git/repository/jeff_git/gaeGradle2WangMobile_DeployTomcat600	
+	docker image build -t wangmobile .
+						
+
+============================================== 6a  Run the app in docker ------------------------------------------------------------------
+		$ docker container run -p 8080:8080 -d wangmobile
+		===> will output the id:  74c6ce34afdd66290fd1dfc172d5260ebf243867c22174c27e833604a79003e8 
+6a.1	Access the app of docker container		
+		http://192.168.99.100:8080/wangmobile
+6a.2	check logs of the
+		docker container logs 74c6ce34afdd66290fd1dfc172d5260ebf243867c22174c27e833604a79003e8
+6a.3 	stop the container
+	docker container stop 74c6ce34afdd66290fd1dfc172d5260ebf243867c22174c27e833604a79003e8	
+
+========================================================================================================================================================================================
+============================================== Run Containerized app on Google Cloud -----------------------------------------------------------------------------------------------
+========================================================================================================================================================================================
+
+		My Cluster/deployment/Service：  https://console.cloud.google.com/kubernetes/list?project=empprj845
+		Service ->  Endpoints 35.222.241.84   ==>  http://35.222.241.84/wangmobile
+		
+		Or HOme https://console.cloud.google.com/home/dashboard?project=empprj845 ==> Kubernetes Engine
+		Cluster -> Deployment -> Service
+		Install Google Cloud SDK
+		Install kubectl via gcloud
+			gcloud components install kubectl --> will add C:\Users\iapjw1\AppData\Local\Google\Cloud SDK\google-cloud-sdk\bin\kubectlx.xx.exe
+		----------------------------------------------------
+		5c	Dockerize into GCR.IO using gcloud SDK:  https://cloud.google.com/container-registry/docs/pushing-and-pulling
+					5.1	Install google cloud SDK
+						gcloud config list
+							==> project = empprj845
+						gcr format in US:  [HOSTNAME]/[PROJECT-ID]/[IMAGE]
+						my gcr console:	https://cloud.google.com/container-registry/ --> View Console
+					5.2	Tag the local image with the registry name by using the command:
+							docker tag [SOURCE_IMAGE] [HOSTNAME]/[PROJECT-ID]/[IMAGE]
+							e.g.  docker tag hello-node gcr.io/empprj845/hello-node
+							docker tag wangmobile gcr.io/empprj845/wangmobile
+							
+					5.3	Allow docker to push
+							gcloud auth configure-docker
+		
+							C:\z99jw\2take\Cloud\1_Google\Cubernetes\test>gcloud auth configure-docker
+							WARNING: `docker-credential-gcloud` not in system PATH.
+							gcloud's Docker credential helper can be configured but it will not work until this is corrected.
+							WARNING: `docker` not in system PATH.
+							`docker` and `docker-credential-gcloud` need to be in the same PATH in order to work correctly together.
+							gcloud's Docker credential helper can be configured but it will not work until this is corrected.
+							The following settings will be added to your Docker config file
+							located at [C:\Users\iapjw1\.docker\config.json]:
+							 {
+							  "credHelpers": {
+							    "gcr.io": "gcloud",
+							    "us.gcr.io": "gcloud",
+							    "eu.gcr.io": "gcloud",
+							    "asia.gcr.io": "gcloud",
+							    "staging-k8s.gcr.io": "gcloud",
+							    "marketplace.gcr.io": "gcloud"
+							  }
+							}
+		
+					5.3	Push the tagged image to Container Registry by using the command:
+							docker push [HOSTNAME]/[PROJECT-ID]/[IMAGE]
+
+							docker push  gcr.io/empprj845/wangmobile
+							==> latest: digest: sha256:b08dc7c25f653377084bcd17f50a786ec1ef26e5a8038dda7de08d14214690be size: 1993
+							
+					5.3a	Pull image
+							docker pull [HOSTNAME]/[PROJECT-ID]/[IMAGE]:[TAG]
+					5.4		check existin or/ Delete service  	
+					https://console.cloud.google.com/kubernetes/workload?project=empprj845
+					
+		------------------------Deploy -> Expose on Google Cloud console/CLI ----------------------------							
+	    https://cloud.google.com/kubernetes-engine/docs/tutorials/hello-app	    
+				1	goto GCloud console:	https://console.cloud.google.com/home/dashboard?project=empprj845&_ga=2.45137313.-466232431.1555007586 
+				4	gcloud container clusters create hello-cluster --num-nodes=2
+					or https://console.cloud.google.com/kubernetes/list?project=empprj845 -> Create Cluster
+				4.1	see the cluster gcloud compute instances list
+				5: Deploy your application
+				5.0	switch kubectl context: https://kubernetes.io/docs/reference/kubectl/cheatsheet/#kubectl-context-and-configuration
+					5.0.1 list contexts: 			kubectl config  get-contexts
+					5.0.2 view current-context:	kubectl config current-context
+					5.0.2	set current-context: ******	kubectl config use-context gke_empprj845_us-central1-c_hello-cluster  *******
+					5.0.4  create a context kubectl config set-context --current --namespace=gke_empprj845_us-central1-c_hello-cluster 
+					
+				5.1	kubectl run wangmobile --image=gcr.io/empprj845/wangmobile:latest --port 8080
+					--> will create the deployment named wangmobile https://console.cloud.google.com/kubernetes/workload?project=empprj845&workload_list_tablesize=50
+				
+				6	Expose your application to the Internet					
+					kubectl expose deployment wangmobile --type=LoadBalancer --port 80 --target-port 8080
+					
+					The --port flag specifies the port number configured on the Load Balancer, 
+					the --target-port flag specifies the port number that is used by the Pod created by the kubectl run command from the previous step.
+					
+					To see services
+						kubectl get services
+							NAME         TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)        AGE
+							kubernetes   ClusterIP      10.39.240.1    <none>          443/TCP        35m
+							wangmobile   LoadBalancer   10.39.240.60   35.222.241.84   80:32405/TCP   1m
+					Also 	https://console.cloud.google.com/kubernetes/discovery?project=empprj845&service_list_tablesize=50 
+						Services will list the hello-node services having endpoints 35.188.215.104:80 which is the External-IP from above
+				7	Test the app					
+					http://35.222.241.84/wangmobile/
+			
+		!!!!!!!!!!! Update existing services -- https://console.cloud.google.com/kubernetes/discovery?project=empprj845&service_list_tablesize=50
+		JW : I guess that as long as I don't delete the clustes, the IP won't change.
+		So Simply re-create the deployment + service
+		
+		1) list instances:		gcloud beta compute instances list
+
+============================================== Run Containerized app inside minikube ----------------------------------------	
+src:		https://kubernetes.io/docs/tutorials/hello-minikube/
+
+5a	dockerize into minikube
+	0) under git bash 
+		cd <location of project>
+	1)	point local docker environment to minikube using the following command:	
+		eval $(minikube docker-env)
+	2)	docker images
+	3)	docker image build -t wangmobile .
+										
+6c 	Run in minicube using internal images from 5a		
+6c.1 switch kubectl to minikube
+	set current-context: ******	kubectl config use-context minikube  *******	
+	 kubectl run  wangmobile --image=wangmobile:latest --port=8080 --image-pull-policy=Never
+
+6c.1	Create a Service
+	kubectl expose deployment wangmobile --type=LoadBalancer --port=8080
+	kubectl get svc --all-namespaces	-- to get the service and port 8080:30716
+	
+6c.2	Access the app-- 192.168.99.101 is the ip of minikube  
+	minikube service wangmobile	
+	or http://192.168.99.101:30716/wangmobile/
+
+
+6c-a using kubernetes dashboard
+		1)	kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/master/aio/deploy/recommended/kubernetes-dashboard.yaml
+		2)  kubectl -n kube-system get service kubernetes-dashboard	
+				NAME                   TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)   AGE
+				kubernetes-dashboard   ClusterIP   10.110.131.211   <none>        80/TCP    22h
+		3a)	minikube dashboard
+		or
+		3b) kubectl proxy &
+			
+		!!!!!! Worked 20190424
+		http://localhost:8001/api/v1/namespaces/kube-system/services/kubernetes-dashboard:/proxy  -- works
+		
+		Other URLS
+			http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/			
+			http://127.0.0.1:55138/api/v1/namespaces/kube-system/services/http:kubernetes-dashboard:/proxy/#!/overview?namespace=default
+			http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/
+	delete not really deleting --NW
+	 kubectl -n kube-system delete service kubernetes-dashboard
+	 kubectl -n kube-system delete deployment kubernetes-dashboard
+	
+6c.3 	Cleanup
+	kubectl delete service wangmobile
+	kubectl delete deployment wangmobile
+
+	Optionally, stop the Minikube virtual machine (VM):
+		minikube stop
+	Optionally, delete the Minikube VM:
+		minikube delete  
+
+	
+-------------------------------------------------	Clean-up
+
+kubectl get services
+kubectl get deployments
+kubectl config view ---- will show current-context  -- see 5.0 above
+kubectl config use-context minikube  ----- to set current-context
+		

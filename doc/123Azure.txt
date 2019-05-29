@@ -1,0 +1,144 @@
+1) Install Azure cli:  
+https://docs.microsoft.com/en-us/cli/azure/install-azure-cli-windows?view=azure-cli-latest
+https://docs.microsoft.com/en-us/cli/azure/?view=azure-cli-latest
+	az login
+	az --version
+	
+Q-Start Docker
+	
+1) portal https://portal.azure.com/#blade/HubsExtension/BrowseResourceBlade/resourceType/Microsoft.Web%2Fsites
+
+2) lunch cloud shell, create resource group
+	Will ask to create a storage --> cloud-shell-storage-eastus
+3) create service plan:
+	jeffery@Azure:~$ 
+	az appservice plan create --name jwAppServicePlan --resource-group cloud-shell-storage-eastus --sku B1 --is-linux
+4) create app:
+	az webapp create --resource-group cloud-shell-storage-eastus --plan jwAppServicePlan --name jw-hw --deployment-container-image-name microsoft/azure-appservices-go-quickstart
+5) test the app
+	Test the app:  http://jw-hw.azurewebsites.net/hello
+	==> Hello, world
+6)	Clean up:	
+	az group delete --name cloud-shell-storage-eastus
+	
+================== Docker -> ACR -> https://docs.microsoft.com/en-us/azure/app-service/containers/tutorial-custom-docker-image
+-2) create resource in Cloud shell if not exist
+-1) az appservice plan create --name jwAppServicePlan --resource-group cloud-shell-storage-eastus --sku B1 --is-linux
+0) docker run -p 8080:8080 wangmobile --> 
+1)	Cloud shell | az cli
+2)	create Azure Container Registry
+	az acr create --name jwotm --resource-group cloud-shell-storage-eastus --sku Basic --admin-enabled true	
+		{
+		  "adminUserEnabled": true,
+		  "creationDate": "2019-05-24T13:10:18.358436+00:00",
+		  "id": "/subscriptions/baccda5b-e5ee-48ad-8540-36df551e8bbd/resourceGroups/cloud-shell-storage-eastus/providers/Microsoft.ContainerRegistry/registries/jwotm",
+		  "location": "eastus",
+		  "loginServer": "jwotm.azurecr.io",
+		  "name": "jwotm",
+		  "networkRuleSet": null,
+		  "provisioningState": "Succeeded",
+		  "resourceGroup": "cloud-shell-storage-eastus",
+		  "sku": {
+		    "name": "Basic",
+		    "tier": "Basic"
+		  },
+		  "status": null,
+		  "storageAccount": null,
+		  "tags": {},
+		  "type": "Microsoft.ContainerRegistry/registries"
+		}
+2.1	az acr repository list --name jwotm
+	==> []
+3) 	H:\> 
+	az acr credential show --name jwotm
+===>
+  "passwords": [
+    {
+      "name": "password",
+      "value": "nFp5Zi4ymp/oldFrGM5fxlF88EjjvmBW"
+    },
+    {
+      "name": "password2",
+      "value": "02HHsQ8Xou5birnOY1LemmEIe=MQnE+f"
+    }
+  ],
+  "username": "jwotm"
+		  
+4) docker login jwotm.azurecr.io --username <registry-username>
+ docker login jwotm.azurecr.io --username jwotm --password nFp5Zi4ymp/oldFrGM5fxlF88EjjvmBW
+ ==> Login Succeeded
+ 
+5) docker tag wangmobile jwotm.azurecr.io/mydockerimage:latest
+
+6)  docker push jwotm.azurecr.io/mydockerimage:latest
+6.1) check push: 
+	az acr repository list -n jwotm
+	
+  	"mydockerimage"
+  	
+----------------   
+7 Create Web app
+	az webapp create --resource-group cloud-shell-storage-eastus --plan jwAppServicePlan --name wangmobile --deployment-container-image-name jwotm.azurecr.io/mydockerimage:latest
+	==> [
+	...
+	]
+8 Configure registry credentials in web app
+	az webapp config container set --name wangmobile --resource-group cloud-shell-storage-eastus --docker-custom-image-name jwotm.azurecr.io/mydockerimage:v1.0.0 --docker-registry-server-url https://jwotm.azurecr.io --docker-registry-server-user jwotm --docker-registry-server-password nFp5Zi4ymp/oldFrGM5fxlF88EjjvmBW
+	az webapp config container set --name wangmobile --resource-group cloud-shell-storage-eastus --docker-custom-image-name jwotm.azurecr.io/mydockerimage:latest --docker-registry-server-url https://jwotm.azurecr.io --docker-registry-server-user jwotm --docker-registry-server-password nFp5Zi4ymp/oldFrGM5fxlF88EjjvmBW
+	==> [
+	...
+	] 		
+9 Tell the docker port to the service
+	az webapp config appsettings set --resource-group cloud-shell-storage-eastus --name wangmobile --settings WEBSITES_PORT=8080
+		==> [
+	...
+	] 
+10 Test the app	
+	http://wangmobile.azurewebsites.net/wangmobile/	
+	==> Bingo
+	
+======================== access logs
+11	Turn on the logging
+	az webapp log config --name wangmobile --resource-group cloud-shell-storage-eastus --docker-container-logging filesystem
+12a	az webapp log tail --name wangmobile --resource-group cloud-shell-storage-eastus
+12b			log on browser: 
+	https://wangmobile.scm.azurewebsites.net/api/logs/docker
+		==> [{"machineName":"RD00155D9A927E_default","lastUpdated":"2019-05-24T13:57:20Z","size":0,"href":"https://wangmobile.scm.azurewebsites.net/api/vfs/LogFiles/2019_05_24_RD00155D9A927E_default_docker.log","path":"/home/LogFiles/2019_05_24_RD00155D9A927E_default_docker.log"},{"machineName":"RD00155D9A927E","lastUpdated":"2019-05-24T13:57:36Z","size":16295,"href":"https://wangmobile.scm.azurewebsites.net/api/vfs/LogFiles/2019_05_24_RD00155D9A927E_docker.log","path":"/home/LogFiles/2019_05_24_RD00155D9A927E_docker.log"}]
+		on browser:
+		https://wangmobile.scm.azurewebsites.net/api/vfs/LogFiles/2019_05_24_RD00155D9A927E_docker.log
+		==> 
+		...
+		2019-05-24 13:57:16.604 INFO  - docker run -d -p 50428:8080 --name wangmobile_1 -e WEBSITES_ENABLE_APP_SERVICE_STORAGE=false -e WEBSITES_PORT=8080 -e WEBSITE_SITE_NAME=wangmobile -e WEBSITE_AUTH_ENABLED=False -e WEBSITE_ROLE_INSTANCE_ID=0 -e WEBSITE_HOSTNAME=wangmobile.azurewebsites.net -e WEBSITE_INSTANCE_ID=5a6b5a0a634d30de5f17ff449e118314cc910a66acb034b5e20d8ebce3ea88fe -e HTTP_LOGGING_ENABLED=1 jwotm.azurecr.io/mydockerimage:v1.0.0  
+
+2019-05-24 13:57:20.581 INFO  - Initiating warmup request to container wangmobile_1 for site wangmobile
+2019-05-24 13:57:35.897 INFO  - Waiting for response to warmup request for container wangmobile_1. Elapsed time = 15.315761 sec
+		
+		
+=============SSH Conn		
+TD	1) modify Dockerfile
+	ENV SSH_PASSWD "root:Docker!"
+	RUN apt-get update \
+	        && apt-get install -y --no-install-recommends dialog \
+	        && apt-get update \
+	  && apt-get install -y --no-install-recommends openssh-server \
+	  && echo "$SSH_PASSWD" | chpasswd
+	  
+	  This configuration does not allow external connections to the container. SSH is available only through the Kudu/SCM Site. 
+	  The Kudu/SCM site is authenticated with your Azure account.
+	  
+	
+TD	2) https://wangmobile.scm.azurewebsites.net/webssh/host
+https://wangmobile.scm.azurewebsites.net/webssh/wangmobile.azurewebsites.net/wangmobile
+	==> Waiting for new containers to start 
+	Docker as password  ==> Container started  
+	172.16.6.3:2222Error: connect ECONNREFUSED 172.16.6.2:2222
+	 
+TD	3) top
+		
+============= Map Custom DNS
+https://docs.microsoft.com/en-us/azure/app-service/app-service-web-tutorial-custom-domain	 
+
+
+============= Update to latest container image
+
+	
