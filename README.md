@@ -35,7 +35,7 @@ http://localhost:8080, and you should see the jsp page.
 ## Test the REST web service:
 http://localhost:8080/aocs, and you will see the empty results
 
-## Post data to the REST service:
+## Post data to the REST service:  - See StatController/GpsController for instructions
 
 In PostMan,
 Url: http://localhost:8080/aoc
