@@ -1,0 +1,8 @@
+FROM glassfish:latest
+COPY wangmobile-6.0.0.war /wangmobile.war
+COPY .bash_profile /root/.bash_profile
+COPY gf.sh /
+RUN chmod 744 /gf.sh
+RUN chmod 744 /root/.bash_profile
+EXPOSE 8080
+ENTRYPOINT ["/gf.sh"]

@@ -1,0 +1,18 @@
+
+0) EC2 lunch t2-small Ubuntu instance w/ existing security group 
+
+1) bash cdamzn
+2) ssh -i "j45hotmail_key_pair.pem" ubuntu@ec2-18-222-170-109.us-east-2.compute.amazonaws.com
+2.0) install docker -- ONLY the 1st time log into the instance 
+	(1) sudo apt update
+	(2) sudo apt install apt-transport-https ca-certificates curl software-properties-common
+	(3) curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+	(4) sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable"	
+	(5) sudo apt update
+	(6) apt-cache policy docker-ce
+	(7) sudo apt install docker-ce
+	(8) check:
+		sudo systemctl status docker
+2.1) FZ .bash_profile to ~
+3) docker run -p 8080:8080 -d wangmobile
+4) wait for 2min ->	http://3.15.21.147:8080/wangmobile/index.html
