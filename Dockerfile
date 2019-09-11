@@ -20,6 +20,6 @@ RUN rm -rf /usr/local/tomcat/webapps/*
 	
 #COPY ./build/libs/wangmobile-3.0.0.war /usr/local/tomcat/webapps/ROOT.war
 #COPY ./wangmobile-3.0.0.war /usr/local/tomcat/webapps/wangmobile.war1
-COPY ./build/libs/wangmobile-4.0.0.war /usr/local/tomcat/webapps/wangmobile.war
+COPY ./build/libs/wangmobile.war /usr/local/tomcat/webapps/wangmobile.war
 CMD ["catalina.sh","run"]
 

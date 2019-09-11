@@ -21,7 +21,9 @@ I have following plugins installed:
   [Git clone](https://github.com/jywang919/otm-support) the project into Eclipse.
   Right Click the project -> Configure -> Add Gradle Nature.
   You may need to re-start Eclipse for Spring Boot/Gradle tools to show-up
-
+## Enable hot code swapping in eclipse
+	Run As -> Run Configurtions -> Arguments -> VM Arguments add following -javaagent:/Users/jiyongwangMBPro/git/otm-support/lib/springloaded-1.2.5.RELEASE.jar -noverify
+	
 ## Run the application in Eclipse on your local machine
 Right click the project, Run As: Spring Boot App
 

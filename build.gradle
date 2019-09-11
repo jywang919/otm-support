@@ -23,6 +23,13 @@ repositories {
     mavenCentral()
 }
 
+configurations{
+	developmentOnly
+	runtimeClasspath{
+		extendsFrom developmentOnly
+	}
+}
+
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
@@ -59,7 +66,10 @@ dependencies {
     // tag::tests[]
     testCompile("org.springframework.boot:spring-boot-starter-test")
     // end::tests[]	 
-       
+    
+    //for hot code swap dureing development
+    	developmentOnly("org.springframework.boot:spring-boot-devtools")
+		
 }
 
 
