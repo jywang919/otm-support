@@ -72,5 +72,12 @@ Url: http://localhost:8080/aoc
 5.	To post data to the WS, change the URL in PostMan above	
 
 
+e-Trade 
+ 02/25/20	  Transfer  	 	  ACH DEPOSIT REFID:38560151482;	 	10,000.00	45,000.00
+ 08/08/19	  Transfer  	 	  ACH DEPOSIT REFID:27752748482;	 	5,000.00	35,000.00
+ 03/29/19	  Transfer  	 	  ACH WITHDRAWL REFID:21085413482;	 	-30,000.00	30,000.00
+ 02/01/19	  Transfer  	 	  ACH DEPOSIT REFID:18677347482;	 	10,000.00	60,000.00
+ 01/29/19	  Transfer  	 	  ACH DEPOSIT REFID:18509318482;	 	10,000.00	50,000.00
+ 01/09/19	  Transfer  	 	  ACH DEPOSIT REFID:17766266482;	 	40,000.00	40,000.00
 
 
